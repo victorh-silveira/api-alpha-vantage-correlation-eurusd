@@ -77,9 +77,12 @@ apiToken = "HIBKV1AXJA6BTKDE"
 # Par alvo (EUR/USD)
 targetPair = "EUR/USD"
 
-# Pares Major e Minor
-majorPairs = ["GBP/USD", "USD/JPY", "USD/CHF", "USD/CAD", "AUD/USD", "NZD/USD"]
-minorPairs = ["EUR/GBP", "EUR/AUD", "EUR/CAD", "EUR/JPY", "GBP/JPY", "GBP/AUD", "AUD/JPY", "CHF/JPY", "NZD/JPY", "GBP/CHF"]
+# Pares Principais (Major Pairs)
+majorPairs = ["AUD/JPY", "AUD/USD", "EUR/AUD", "EUR/CAD", "EUR/CHF", "EUR/GBP", "EUR/JPY", "EUR/USD", "GBP/AUD", "GBP/JPY", "GBP/USD", "USD/CAD", "USD/CHF", "USD/JPY"]
+
+# Pares Secundários (Minor Pairs)
+minorPairs = ["AUD/CAD", "AUD/CHF", "AUD/JPY", "EUR/NZD", "GBP/CAD", "GBP/CHF", "GBP/NZD", "NZD/JPY", "NZD/USD", "USD/MXN", "USD/PLN"]
+
 
 # Calcula correlação para os pares Major
 correlacaoMajor = calcularCorrelacao(apiToken, targetPair, majorPairs)
