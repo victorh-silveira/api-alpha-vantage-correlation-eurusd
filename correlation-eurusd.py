@@ -1,27 +1,29 @@
 import requests
 import pandas as pd
-import numpy as np
+import os
 
-# Função para buscar os dados do Alpha Vantage no timeframe de 30min
+# Função para buscar os dados do Alpha Vantage no timeframe de 30min ou diário
 def fetchExchangeRate(apiToken, pair):
     url = f"https://www.alphavantage.co/query"
     params = {
-        "function": "FX_INTRADAY",  # Pegando dados intraday de Forex
+        "function": "FX_DAILY",  # Usando o endpoint de dados diários, que é gratuito
         "from_symbol": pair.split("/")[0],
         "to_symbol": pair.split("/")[1],
         "apikey": apiToken,
-        "interval": "30min",  # Definindo o intervalo de 30 minutos
         "outputsize": "compact"
     }
-    
+
     response = requests.get(url, params=params)
     data = response.json()
-    
-    if "Time Series FX (30min)" not in data:
+
+    # Verifica se há mensagem de erro na resposta
+    if "Error Message" in data or "Note" in data:
+        raise Exception(f"Erro da API: {data.get('Error Message', data.get('Note', 'Erro desconhecido'))}")
+
+    if "Time Series FX (Daily)" not in data:
         raise Exception(f"Erro ao buscar dados para o par {pair}")
-    
-    # Convertendo o dicionário em um DataFrame
-    df = pd.DataFrame(data["Time Series FX (30min)"]).T
+
+    df = pd.DataFrame(data["Time Series FX (Daily)"]).T
     df = df.rename(columns={
         "1. open": "open",
         "2. high": "high",
@@ -57,14 +59,16 @@ def calcularCorrelacao(apiToken, targetPair, otherPairs):
             print(f"Erro ao buscar dados ou calcular correlação para o par {pair}: {e}")
     
     # Ordenar as correlações em ordem crescente
-    correlacoes_ordenadas = dict(sorted(correlacoes.items(), key=lambda item: item[1]))
+    correlacoesOrdenadas = dict(sorted(correlacoes.items(), key=lambda item: item[1]))
 
-    return correlacoes_ordenadas
+    return correlacoesOrdenadas
 
-# Função para exibir as correlações de forma organizada
-def exibirCorrelacoes(titulo, correlacoes):
+# Função para exibir as correlações de forma organizada e salvar em um arquivo
+def exibirCorrelacoes(titulo, correlacoes, outputFile):
+    outputFile.write(f"\n{titulo}\n")
     print(f"\n{titulo}")
     for pair, corr in correlacoes.items():
+        outputFile.write(f"{pair}: {corr:.2f}\n")
         print(f"{pair}: {corr:.2f}")
 
 # Seu token da Alpha Vantage
@@ -78,10 +82,18 @@ majorPairs = ["GBP/USD", "USD/JPY", "USD/CHF", "USD/CAD", "AUD/USD", "NZD/USD"]
 minorPairs = ["EUR/GBP", "EUR/AUD", "EUR/CAD", "EUR/JPY", "GBP/JPY", "GBP/AUD", "AUD/JPY", "CHF/JPY", "NZD/JPY", "GBP/CHF"]
 
 # Calcula correlação para os pares Major
-correlacao_major = calcularCorrelacao(apiToken, targetPair, majorPairs)
+correlacaoMajor = calcularCorrelacao(apiToken, targetPair, majorPairs)
 # Calcula correlação para os pares Minor
-correlacao_minor = calcularCorrelacao(apiToken, targetPair, minorPairs)
+correlacaoMinor = calcularCorrelacao(apiToken, targetPair, minorPairs)
 
-# Exibe correlações ordenadas em ordem crescente
-exibirCorrelacoes("Correlação - Pares Major", correlacao_major)
-exibirCorrelacoes("Correlação - Pares Minor", correlacao_minor)
+# Caminho do arquivo para salvar o resultado
+currentDir = os.path.dirname(os.path.abspath(__file__))
+outputPath = os.path.join(currentDir, "correlation-eurusd.txt")
+
+# Abre o arquivo para escrever os resultados
+with open(outputPath, "w") as outputFile:
+    # Exibe e escreve correlações ordenadas em ordem crescente
+    exibirCorrelacoes("Correlação - Pares Major", correlacaoMajor, outputFile)
+    exibirCorrelacoes("Correlação - Pares Minor", correlacaoMinor, outputFile)
+
+print(f"\nAs correlações foram salvas em: {outputPath}")
