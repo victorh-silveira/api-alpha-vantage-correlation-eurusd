@@ -1,3 +1,5 @@
 #Ignora o arquivo settings.env que contem o apiToken da AlphaVantage
 setting.env
 
+settings.env
+*.env
