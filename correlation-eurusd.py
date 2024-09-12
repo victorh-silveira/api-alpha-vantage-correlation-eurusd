@@ -1,6 +1,12 @@
 import requests
 import pandas as pd
 import os
+from dotenv import load_dotenv
+
+
+# Carregar o arquivo settings.env
+load_dotenv('settings.env')
+
 
 # Função para buscar os dados do Alpha Vantage no timeframe de 30min ou diário
 def fetchExchangeRate(apiToken, pair):
@@ -34,12 +40,13 @@ def fetchExchangeRate(apiToken, pair):
     df = df.sort_index()
     return df
 
+
 # Função para calcular a correlação entre o par alvo e outros pares fornecidos
 def calcularCorrelacao(apiToken, targetPair, otherPairs):
     # Baixar dados para o par alvo (EUR/USD ou outro)
     dfTarget = fetchExchangeRate(apiToken, targetPair)
     dfTarget['close'] = pd.to_numeric(dfTarget['close'])  # Converter os preços para numéricos
-    
+
     # Dicionário para armazenar correlações
     correlacoes = {}
 
@@ -47,21 +54,22 @@ def calcularCorrelacao(apiToken, targetPair, otherPairs):
         try:
             dfOther = fetchExchangeRate(apiToken, pair)
             dfOther['close'] = pd.to_numeric(dfOther['close'])
-            
+
             # Concatenar os dados dos dois pares com base na data
             dfCombined = pd.concat([dfTarget['close'], dfOther['close']], axis=1, keys=[targetPair, pair]).dropna()
 
             # Calcular correlação
             correlacao = dfCombined.corr().iloc[0, 1]
             correlacoes[pair] = correlacao
-            
+
         except Exception as e:
             print(f"Erro ao buscar dados ou calcular correlação para o par {pair}: {e}")
-    
+
     # Ordenar as correlações em ordem crescente
     correlacoesOrdenadas = dict(sorted(correlacoes.items(), key=lambda item: item[1]))
 
     return correlacoesOrdenadas
+
 
 # Função para exibir as correlações de forma organizada e salvar em um arquivo
 def exibirCorrelacoes(titulo, correlacoes, outputFile):
@@ -71,18 +79,20 @@ def exibirCorrelacoes(titulo, correlacoes, outputFile):
         outputFile.write(f"{pair}: {corr:.2f}\n")
         print(f"{pair}: {corr:.2f}")
 
-# Seu token da Alpha Vantage
-apiToken = "HIBKV1AXJA6BTKDE"
+
+# Carregar o token da variável de ambiente
+apiToken = os.getenv('ALPHAVANTAGE_API_KEY')
 
 # Par alvo (EUR/USD)
 targetPair = "EUR/USD"
 
 # Pares Principais (Major Pairs)
-majorPairs = ["AUD/JPY", "AUD/USD", "EUR/AUD", "EUR/CAD", "EUR/CHF", "EUR/GBP", "EUR/JPY", "EUR/USD", "GBP/AUD", "GBP/JPY", "GBP/USD", "USD/CAD", "USD/CHF", "USD/JPY"]
+majorPairs = ["AUD/JPY", "AUD/USD", "EUR/AUD", "EUR/CAD", "EUR/CHF", "EUR/GBP", "EUR/JPY", "EUR/USD", "GBP/AUD",
+              "GBP/JPY", "GBP/USD", "USD/CAD", "USD/CHF", "USD/JPY"]
 
 # Pares Secundários (Minor Pairs)
-minorPairs = ["AUD/CAD", "AUD/CHF", "AUD/JPY", "EUR/NZD", "GBP/CAD", "GBP/CHF", "GBP/NZD", "NZD/JPY", "NZD/USD", "USD/MXN", "USD/PLN"]
-
+minorPairs = ["AUD/CAD", "AUD/CHF", "AUD/JPY", "EUR/NZD", "GBP/CAD", "GBP/CHF", "GBP/NZD", "NZD/JPY", "NZD/USD",
+              "USD/MXN", "USD/PLN"]
 
 # Calcula correlação para os pares Major
 correlacaoMajor = calcularCorrelacao(apiToken, targetPair, majorPairs)
